@@ -33,6 +33,7 @@ import (
 	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
+	openshiftclient "github.com/openshift/client-go/apps/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -104,14 +105,18 @@ func (c *Client) Create(resources ResourceList) (*Result, error) {
 
 // Wait up to the given timeout for the specified resources to be ready
 func (c *Client) Wait(resources ResourceList, timeout time.Duration) error {
+	fmt.Println("WAIT INVOKED")
 	cs, err := c.Factory.KubernetesClientSet()
+	client_config, _ := c.Factory.ToRawKubeConfigLoader().ClientConfig()
+	oc_client := openshiftclient.NewForConfigOrDie(client_config)
 	if err != nil {
 		return err
 	}
 	w := waiter{
-		c:       cs,
-		log:     c.Log,
-		timeout: timeout,
+		c:         cs,
+		ocpclient: oc_client,
+		log:       c.Log,
+		timeout:   timeout,
 	}
 	return w.waitForResources(resources)
 }

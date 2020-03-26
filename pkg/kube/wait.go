@@ -18,9 +18,14 @@ package kube // import "helm.sh/helm/v3/pkg/kube"
 
 import (
 	"fmt"
+	openshift "github.com/openshift/api/apps/v1"
+	openshiftclient "github.com/openshift/client-go/apps/clientset/versioned"
+	"go/importer"
+
 	"time"
 
 	"github.com/pkg/errors"
+	deploymentutil "helm.sh/helm/v3/internal/third_party/k8s.io/kubernetes/deployment/util"
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
@@ -36,20 +41,22 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-
-	deploymentutil "helm.sh/helm/v3/internal/third_party/k8s.io/kubernetes/deployment/util"
 )
 
 type waiter struct {
-	c       kubernetes.Interface
-	timeout time.Duration
-	log     func(string, ...interface{})
+	c         kubernetes.Interface
+	ocpclient openshiftclient.Interface
+	timeout   time.Duration
+	log       func(string, ...interface{})
 }
 
 // waitForResources polls to get the current status of all pods, PVCs, and Services
 // until all are ready or a timeout is reached
 func (w *waiter) waitForResources(created ResourceList) error {
 	w.log("beginning wait for %d resources with timeout of %v", len(created), w.timeout)
+
+	ocp_pakages, err := importer.Default().Import("github.com/openshift/api/apps/v1")
+	fmt.Println(ocp_pakages, err)
 
 	return wait.Poll(2*time.Second, w.timeout, func() (bool, error) {
 		for _, v := range created {
@@ -61,6 +68,14 @@ func (w *waiter) waitForResources(created ResourceList) error {
 				err error
 			)
 			switch value := AsVersioned(v).(type) {
+			case *openshift.DeploymentConfig:
+				fmt.Println("HERE")
+				tst, err := w.ocpclient.AppsV1().DeploymentConfigs(v.Namespace).Get(v.Name, metav1.GetOptions{})
+				if err != nil {
+					return false, err
+				}
+				fmt.Println(tst)
+
 			case *corev1.Pod:
 				pod, err := w.c.CoreV1().Pods(v.Namespace).Get(v.Name, metav1.GetOptions{})
 				if err != nil || !w.isPodReady(pod) {
@@ -162,6 +177,7 @@ func (w *waiter) podsReadyForObject(namespace string, obj runtime.Object) (bool,
 }
 
 func (w *waiter) podsforObject(namespace string, obj runtime.Object) ([]corev1.Pod, error) {
+	fmt.Println(namespace)
 	selector, err := SelectorsForObject(obj)
 	if err != nil {
 		return nil, err
@@ -337,6 +353,7 @@ func (w *waiter) statefulSetReady(sts *appsv1.StatefulSet) bool {
 }
 
 func getPods(client kubernetes.Interface, namespace, selector string) ([]corev1.Pod, error) {
+	fmt.Println(selector)
 	list, err := client.CoreV1().Pods(namespace).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})

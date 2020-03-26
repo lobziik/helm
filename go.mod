@@ -22,6 +22,8 @@ require (
 	github.com/mitchellh/copystructure v1.0.0
 	github.com/opencontainers/go-digest v1.0.0-rc1
 	github.com/opencontainers/image-spec v1.0.1
+	github.com/openshift/api v0.0.0-20200217161739-c99157bc6492
+	github.com/openshift/client-go v0.0.0-20200116152001-92a2713fa240
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
@@ -29,13 +31,13 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/xeipuuv/gojsonschema v1.1.0
 	golang.org/x/crypto v0.0.0-20200128174031-69ecbb4d6d5d
-	k8s.io/api v0.17.3
-	k8s.io/apiextensions-apiserver v0.17.3
-	k8s.io/apimachinery v0.17.3
-	k8s.io/cli-runtime v0.17.3
-	k8s.io/client-go v0.17.3
+	k8s.io/api v0.17.1
+	k8s.io/apiextensions-apiserver v0.17.1
+	k8s.io/apimachinery v0.17.1
+	k8s.io/cli-runtime v0.17.1
+	k8s.io/client-go v0.17.1
 	k8s.io/klog v1.0.0
-	k8s.io/kubectl v0.17.3
+	k8s.io/kubectl v0.17.1
 	sigs.k8s.io/yaml v1.1.0
 )
 
