@@ -19,6 +19,7 @@ package kube // import "helm.sh/helm/v3/pkg/kube"
 import (
 	"sync"
 
+	apiopenshift "github.com/openshift/api"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -64,6 +65,9 @@ func kubernetesNativeScheme() *runtime.Scheme {
 		// and must thus be added separately.
 		apiextensionsv1beta1.AddToScheme(k8sNativeScheme)
 		apiextensionsv1.AddToScheme(k8sNativeScheme)
+
+		// add OpenShift specific resources
+		apiopenshift.Install(k8sNativeScheme)
 	})
 	return k8sNativeScheme
 }

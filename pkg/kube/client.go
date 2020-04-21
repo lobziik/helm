@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	openshift "github.com/openshift/client-go/apps/clientset/versioned"
+
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/pkg/errors"
 	batch "k8s.io/api/batch/v1"
@@ -55,8 +57,9 @@ var metadataAccessor = meta.NewAccessor()
 
 // Client represents a client capable of communicating with the Kubernetes API.
 type Client struct {
-	Factory Factory
-	Log     func(string, ...interface{})
+	Factory          Factory
+	OpenShiftFactory OpenShiftFactory
+	Log              func(string, ...interface{})
 	// Namespace allows to bypass the kubeconfig file for the choice of the namespace
 	Namespace string
 }
@@ -85,6 +88,18 @@ func New(getter genericclioptions.RESTClientGetter) *Client {
 }
 
 var nopLogger = func(_ string, _ ...interface{}) {}
+
+func (c *Client) OpenShiftClientSet() (*openshift.Clientset, error) {
+	clientConfig, err := c.Factory.ToRawKubeConfigLoader().ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+	cs, err := openshift.NewForConfig(clientConfig)
+	if err != nil {
+		return nil, err
+	}
+	return cs, nil
+}
 
 // IsReachable tests connectivity to the cluster
 func (c *Client) IsReachable() error {
@@ -118,8 +133,13 @@ func (c *Client) Wait(resources ResourceList, timeout time.Duration) error {
 	if err != nil {
 		return err
 	}
+	ocpcs, err := c.OpenShiftFactory.OpenShiftClientSet()
+	if err != nil {
+		return err
+	}
 	w := waiter{
 		c:       cs,
+		oc:      ocpcs,
 		log:     c.Log,
 		timeout: timeout,
 	}

@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	appsopenshift "github.com/openshift/api/apps/v1"
+	openshift "github.com/openshift/client-go/apps/clientset/versioned"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
@@ -43,6 +45,7 @@ import (
 
 type waiter struct {
 	c       kubernetes.Interface
+	oc      openshift.Interface
 	timeout time.Duration
 	log     func(string, ...interface{})
 }
@@ -67,6 +70,8 @@ func (w *waiter) waitForResources(created ResourceList) error {
 				if err != nil || !w.isPodReady(pod) {
 					return false, err
 				}
+			case *appsopenshift.DeploymentConfig:
+				fmt.Println("HERE")
 			case *appsv1.Deployment, *appsv1beta1.Deployment, *appsv1beta2.Deployment, *extensionsv1beta1.Deployment:
 				currentDeployment, err := w.c.AppsV1().Deployments(v.Namespace).Get(context.Background(), v.Name, metav1.GetOptions{})
 				if err != nil {

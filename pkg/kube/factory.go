@@ -17,6 +17,8 @@ limitations under the License.
 package kube // import "helm.sh/helm/v3/pkg/kube"
 
 import (
+	openshift "github.com/openshift/client-go/apps/clientset/versioned"
+
 	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -35,4 +37,8 @@ type Factory interface {
 	NewBuilder() *resource.Builder
 	// Returns a schema that can validate objects stored on disk.
 	Validator(validate bool) (validation.Schema, error)
+}
+
+type OpenShiftFactory interface {
+	OpenShiftClientSet() (*openshift.Clientset, error)
 }
