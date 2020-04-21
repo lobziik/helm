@@ -25,8 +25,6 @@ import (
 	"sync"
 	"time"
 
-	openshift "github.com/openshift/client-go/apps/clientset/versioned"
-
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/pkg/errors"
 	batch "k8s.io/api/batch/v1"
@@ -82,24 +80,13 @@ func New(getter genericclioptions.RESTClientGetter) *Client {
 		}
 	})
 	return &Client{
-		Factory: cmdutil.NewFactory(getter),
-		Log:     nopLogger,
+		Factory:          cmdutil.NewFactory(getter),
+		OpenShiftFactory: NewOpenShiftFactory(getter),
+		Log:              nopLogger,
 	}
 }
 
 var nopLogger = func(_ string, _ ...interface{}) {}
-
-func (c *Client) OpenShiftClientSet() (*openshift.Clientset, error) {
-	clientConfig, err := c.Factory.ToRawKubeConfigLoader().ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-	cs, err := openshift.NewForConfig(clientConfig)
-	if err != nil {
-		return nil, err
-	}
-	return cs, nil
-}
 
 // IsReachable tests connectivity to the cluster
 func (c *Client) IsReachable() error {
