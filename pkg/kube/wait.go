@@ -71,7 +71,14 @@ func (w *waiter) waitForResources(created ResourceList) error {
 					return false, err
 				}
 			case *appsopenshift.DeploymentConfig:
-				fmt.Println("HERE")
+				currentDeploymentConfig, err := w.oc.AppsV1().DeploymentConfigs(v.Namespace).Get(context.Background(), v.Name, metav1.GetOptions{})
+				if err != nil {
+					return false, err
+				}
+				if currentDeploymentConfig.Spec.Paused {
+					continue
+				}
+				return w.deploymentConfigReady(currentDeploymentConfig), nil
 			case *appsv1.Deployment, *appsv1beta1.Deployment, *appsv1beta2.Deployment, *extensionsv1beta1.Deployment:
 				currentDeployment, err := w.c.AppsV1().Deployments(v.Namespace).Get(context.Background(), v.Name, metav1.GetOptions{})
 				if err != nil {
@@ -219,6 +226,14 @@ func (w *waiter) serviceReady(s *corev1.Service) bool {
 func (w *waiter) volumeReady(v *corev1.PersistentVolumeClaim) bool {
 	if v.Status.Phase != corev1.ClaimBound {
 		w.log("PersistentVolumeClaim is not bound: %s/%s", v.GetNamespace(), v.GetName())
+		return false
+	}
+	return true
+}
+
+func (w *waiter) deploymentConfigReady(dep *appsopenshift.DeploymentConfig) bool {
+	if !(dep.Status.ReadyReplicas == dep.Spec.Replicas) {
+		w.log("DeploymentConfig is not ready: %s/%s. %d out of %d expected pods are ready", dep.Namespace, dep.Name, dep.Status.ReadyReplicas, dep.Spec.Replicas)
 		return false
 	}
 	return true
